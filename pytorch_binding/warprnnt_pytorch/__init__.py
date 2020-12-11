@@ -1,9 +1,10 @@
+import importlib
 import torch
-import warprnnt_pytorch as warp_rnnt
 from torch.autograd import Function
 from torch.nn import Module
 
-from .warp_rnnt import *
+lib_path = importlib.util.find_spec("warprnnt_pytorch_warp_rnnt").origin
+torch.ops.load_library(lib_path)
 
 __all__ = ['rnnt_loss', 'RNNTLoss']
 
@@ -20,7 +21,7 @@ class _RNNT(Function):
 
         certify_inputs(acts, labels, act_lens, label_lens)
 
-        loss_func = warp_rnnt.gpu_rnnt if is_cuda else warp_rnnt.cpu_rnnt
+        loss_func = torch.ops.warprnnt_pytorch_warp_rnnt.gpu_rnnt if is_cuda else torch.ops.warprnnt_pytorch_warp_rnnt.cpu_rnnt
         grads = torch.zeros_like(acts) if acts.requires_grad else torch.zeros(0).to(acts)
         minibatch_size = acts.size(0)
         costs = torch.zeros(minibatch_size, dtype=acts.dtype)
