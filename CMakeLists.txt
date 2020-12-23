@@ -35,6 +35,12 @@ endif()
 
 option(WITH_GPU "compile warp-rnnt with cuda." ${CUDA_FOUND})
 option(WITH_OMP "compile warp-rnnt with openmp." ON)
+option(AS_STATIC "compile warp-rnnt as a static library." OFF)
+
+if(AS_STATIC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -fPIC")
+endif()
 
 if(NOT WITH_OMP)
     add_definitions(-DRNNT_DISABLE_OMP)
@@ -93,9 +99,14 @@ ENDIF()
 
 IF (WITH_GPU)
 
-    MESSAGE(STATUS "Building shared library with GPU support")
+    IF (AS_STATIC)
+        MESSAGE(STATUS "Building static library with GPU support")
+        CUDA_ADD_LIBRARY(warprnnt STATIC src/rnnt_entrypoint.cu)
+    ELSE()
+        MESSAGE(STATUS "Building shared library with GPU support")
+        CUDA_ADD_LIBRARY(warprnnt SHARED src/rnnt_entrypoint.cu)
+    ENDIF()
 
-    CUDA_ADD_LIBRARY(warprnnt SHARED src/rnnt_entrypoint.cu)
     IF (!Torch_FOUND)
         TARGET_LINK_LIBRARIES(warprnnt ${CUDA_curand_LIBRARY})
     ENDIF()
@@ -109,13 +120,18 @@ IF (WITH_GPU)
     SET_TARGET_PROPERTIES(test_gpu PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
 
 ELSE()
-    MESSAGE(STATUS "Building shared library with no GPU support")
+
+    IF (AS_STATIC)
+        MESSAGE(STATUS "Building static library with no GPU support")
+        ADD_LIBRARY(warprnnt STATIC src/rnnt_entrypoint.cpp)
+    ELSE()
+        MESSAGE(STATUS "Building shared library with no GPU support")
+        ADD_LIBRARY(warprnnt SHARED src/rnnt_entrypoint.cpp)
+    ENDIF()
 
     if (NOT APPLE)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O2")
     ENDIF()
-
-    ADD_LIBRARY(warprnnt SHARED src/rnnt_entrypoint.cpp)
 
 ENDIF()
 
