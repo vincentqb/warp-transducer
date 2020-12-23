@@ -9,14 +9,14 @@
     extern THCState* state;
 #endif
 
-int cpu_rnnt(torch::Tensor acts,
+int64_t cpu_rnnt(torch::Tensor acts,
             torch::Tensor labels,
             torch::Tensor input_lengths,
             torch::Tensor label_lengths,
             torch::Tensor costs,
             torch::Tensor grads,
-            int blank_label,
-            int num_threads) {
+            int64_t blank_label,
+            int64_t num_threads) {
 
     int maxT = acts.size(0);
     int maxU = acts.size(1);
@@ -81,14 +81,14 @@ int cpu_rnnt(torch::Tensor acts,
     return -1;
 }
 #ifdef WARPRNNT_ENABLE_GPU
-int gpu_rnnt(torch::Tensor acts,
+int64_t gpu_rnnt(torch::Tensor acts,
             torch::Tensor labels,
             torch::Tensor input_lengths,
             torch::Tensor label_lengths,
             torch::Tensor costs,
             torch::Tensor grads,
-            int blank_label,
-            int num_threads) {
+            int64_t blank_label,
+            int64_t num_threads) {
 
     int minibatch_size = acts.size(0);
     int maxT = acts.size(1);
@@ -154,9 +154,9 @@ int gpu_rnnt(torch::Tensor acts,
 }
 #endif
 
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.def("cpu_rnnt", &cpu_rnnt, "RNNT CPU version");
+TORCH_LIBRARY(warprnnt_pytorch_warp_rnnt, m) {
+    m.def("cpu_rnnt", &cpu_rnnt);
 #ifdef WARPRNNT_ENABLE_GPU
-    m.def("gpu_rnnt", &gpu_rnnt, "RNNT GPU version");
+    m.def("gpu_rnnt", &gpu_rnnt);
 #endif
 }
